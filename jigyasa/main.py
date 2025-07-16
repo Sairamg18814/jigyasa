@@ -9,6 +9,7 @@ from typing import Dict, List, Optional, Any
 from pathlib import Path
 import json
 from datetime import datetime
+import random
 
 from .config import JigyasaConfig
 from .core.model import JigyasaModel, create_jigyasa_model
@@ -162,9 +163,10 @@ class JigyasaSystem:
     
     def phase2_continuous_learning(
         self,
-        learning_topics: List[str],
+        learning_topics: Optional[List[str]] = None,
         learning_cycles: int = 10,
-        checkpoint_dir: str = "./checkpoints/phase2"
+        checkpoint_dir: str = "./checkpoints/phase2",
+        dynamic_topics: bool = True
     ):
         """
         Phase 2: Continuous learning with SEAL
@@ -176,14 +178,33 @@ class JigyasaSystem:
         logging.info("Starting Phase 2: Continuous Learning with SEAL")
         self.training_phase = "seal"
         
+        # Use dynamic topic generation if enabled
+        if dynamic_topics or learning_topics is None:
+            from .cognitive.dynamic_topics import DynamicTopicGenerator
+            topic_generator = DynamicTopicGenerator()
+            logging.info("Using dynamic topic generation for continuous learning")
+        
         learning_results = []
         
         for cycle in range(learning_cycles):
             logging.info(f"Learning cycle {cycle + 1}/{learning_cycles}")
             
+            # Generate topics for this cycle
+            if dynamic_topics or learning_topics is None:
+                # Generate 3-5 topics per cycle
+                num_topics = random.randint(3, 5)
+                cycle_topics = topic_generator.generate_dynamic_topics(
+                    num_topics=num_topics,
+                    include_trends=True,
+                    diversity_weight=0.8
+                )
+                logging.info(f"Generated {len(cycle_topics)} dynamic topics for cycle {cycle + 1}")
+            else:
+                cycle_topics = learning_topics
+            
             cycle_results = {}
             
-            for topic in learning_topics:
+            for topic in cycle_topics:
                 # Acquire new data for the topic
                 logging.info(f"Acquiring data for topic: {topic}")
                 scraped_contents = self.data_engine.acquire_data_for_topic(
@@ -454,9 +475,12 @@ def main():
         phase1_results = system.phase1_foundational_training()
         print(f"✅ Phase 1 completed: {phase1_results}")
         
-        # Phase 2: Continuous learning
-        topics = ["artificial intelligence", "machine learning", "cognitive science"]
-        phase2_results = system.phase2_continuous_learning(topics, learning_cycles=5)
+        # Phase 2: Continuous learning with dynamic topics
+        phase2_results = system.phase2_continuous_learning(
+            learning_topics=None,  # Use dynamic topics
+            learning_cycles=5,
+            dynamic_topics=True
+        )
         print(f"✅ Phase 2 completed")
         
         # Phase 3: Compression

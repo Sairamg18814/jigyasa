@@ -313,7 +313,7 @@ def main():
         
         response = input("\nContinue? (y/n): ")
         if response.lower() == 'y':
-            os.system(f"python -m jigyasa.main --mode train")
+            os.system(f"{sys.executable} -m jigyasa.main --mode train")
     
     elif args.mode == 'guide':
         # Show guide
