@@ -49,12 +49,47 @@ export PYTHONPATH="${PYTHONPATH}:$(pwd)"
 export JIGYASA_DEVICE="${JIGYASA_DEVICE:-cpu}"
 
 echo ""
-read -p "Start training? (y/n): " -n 1 -r
-echo ""
 
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    echo "🚀 Starting training pipeline..."
-    python3 -m jigyasa.main --mode train
+# Check for existing checkpoints
+if [ -d "checkpoints" ]; then
+    echo "📂 Found existing checkpoints directory."
+    echo ""
+    echo "Options:"
+    echo "1. Continue training from where you left off (recommended)"
+    echo "2. Start fresh training (will overwrite existing checkpoints)"
+    echo ""
+    read -p "Choose option (1/2): " -n 1 -r
+    echo ""
+    
+    if [[ $REPLY =~ ^[1]$ ]]; then
+        echo "🚀 Resuming training from last checkpoint..."
+        python3 -m jigyasa.main --mode train --resume --checkpoint-dir ./checkpoints
+    elif [[ $REPLY =~ ^[2]$ ]]; then
+        echo "⚠️  Starting fresh training (existing checkpoints will be overwritten)..."
+        read -p "Are you sure? This will delete previous progress (y/n): " -n 1 -r
+        echo ""
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            echo "🗑️ Removing old checkpoints..."
+            rm -rf checkpoints
+            echo "🚀 Starting fresh training pipeline..."
+            python3 -m jigyasa.main --mode train --checkpoint-dir ./checkpoints
+        else
+            echo "Training cancelled."
+            exit 0
+        fi
+    else
+        echo "Invalid option. Training cancelled."
+        exit 1
+    fi
 else
-    echo "Training cancelled."
+    echo "No existing checkpoints found."
+    read -p "Start training? (y/n): " -n 1 -r
+    echo ""
+    
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo "🚀 Starting training pipeline..."
+        python3 -m jigyasa.main --mode train --checkpoint-dir ./checkpoints
+    else
+        echo "Training cancelled."
+    fi
 fi

@@ -33,6 +33,7 @@ except ImportError:
     from .data.simple_preprocessing import DataPreprocessor
 from .compression.distillation import distill_model
 from .compression.quantization import quantize_model_ptq
+from .autonomous import make_autonomous, autonomous_wrapper, autonomous_system
 
 
 class JigyasaSystem:
@@ -42,6 +43,9 @@ class JigyasaSystem:
     
     def __init__(self, config: JigyasaConfig = None):
         self.config = config or JigyasaConfig()
+        
+        # Initialize autonomous capabilities first
+        make_autonomous()
         
         # Initialize logging
         self._setup_logging()
@@ -60,7 +64,7 @@ class JigyasaSystem:
         self.is_initialized = False
         self.training_phase = "none"  # none, prorl, seal, deployed
         
-        logging.info("Jigyasa system initialized")
+        logging.info("Jigyasa system initialized with autonomous capabilities")
     
     def _setup_logging(self):
         """Setup logging configuration"""
@@ -73,6 +77,7 @@ class JigyasaSystem:
             ]
         )
     
+    @autonomous_wrapper
     def initialize(self, load_pretrained: Optional[str] = None):
         """
         Initialize all system components
@@ -131,6 +136,7 @@ class JigyasaSystem:
         self.is_initialized = True
         logging.info("Jigyasa system initialization completed")
     
+    @autonomous_wrapper
     def phase1_foundational_training(
         self,
         save_checkpoint_every: int = 1000,
@@ -169,6 +175,7 @@ class JigyasaSystem:
             'checkpoint_path': str(checkpoint_path)
         }
     
+    @autonomous_wrapper
     def phase2_continuous_learning(
         self,
         learning_topics: Optional[List[str]] = None,
@@ -278,6 +285,7 @@ class JigyasaSystem:
         logging.info("Phase 2: Continuous learning completed")
         return learning_results
     
+    @autonomous_wrapper
     def phase3_compression_deployment(
         self,
         compression_ratio: float = 0.25,
@@ -455,6 +463,69 @@ class JigyasaSystem:
         print("  Factual      - I'll use chain-of-verification")
         print("\nJust ask me anything naturally! 🚀")
     
+    def _check_for_existing_checkpoints(self, checkpoint_dir: str) -> Optional[Dict[str, Any]]:
+        """
+        Check for existing checkpoints and determine where to resume from
+        
+        Args:
+            checkpoint_dir: Directory to check for checkpoints
+            
+        Returns:
+            Dict with resume information or None if no checkpoints found
+        """
+        import os
+        
+        checkpoint_path = Path(checkpoint_dir)
+        
+        # Check for Phase 3 (deployment) completion
+        deployment_dir = checkpoint_path / "deployment"
+        if deployment_dir.exists() and (deployment_dir / "deployment_info.json").exists():
+            return {
+                'phase': 'completed',
+                'checkpoint_path': str(deployment_dir),
+                'description': 'All phases completed'
+            }
+        
+        # Check for Phase 2 (SEAL) checkpoints
+        phase2_dir = checkpoint_path / "phase2"
+        if phase2_dir.exists():
+            # Look for SEAL cycle checkpoints
+            seal_checkpoints = list(phase2_dir.glob("seal_cycle_*"))
+            if seal_checkpoints:
+                latest_seal = max(seal_checkpoints, key=lambda x: int(x.name.split('_')[-1]))
+                return {
+                    'phase': 'phase3',
+                    'checkpoint_path': str(latest_seal),
+                    'description': f'Phase 2 completed, found {len(seal_checkpoints)} SEAL cycles'
+                }
+        
+        # Check for Phase 1 (ProRL) checkpoint
+        phase1_dir = checkpoint_path / "phase1"
+        prorl_checkpoint = phase1_dir / "prorl_teacher_model"
+        if prorl_checkpoint.exists():
+            return {
+                'phase': 'phase2', 
+                'checkpoint_path': str(prorl_checkpoint),
+                'description': 'Phase 1 (ProRL) completed'
+            }
+        
+        # No checkpoints found
+        return None
+    
+    def _load_checkpoint_if_exists(self, checkpoint_path: str, component: str):
+        """Load checkpoint for specific component if it exists"""
+        try:
+            if component == 'prorl' and self.prorl_trainer:
+                self.prorl_trainer.load_checkpoint(checkpoint_path)
+                logging.info(f"Loaded ProRL checkpoint from {checkpoint_path}")
+            elif component == 'seal' and self.seal_trainer:
+                self.seal_trainer.load_checkpoint(checkpoint_path)
+                logging.info(f"Loaded SEAL checkpoint from {checkpoint_path}")
+            else:
+                logging.warning(f"Cannot load checkpoint for component: {component}")
+        except Exception as e:
+            logging.error(f"Failed to load checkpoint {checkpoint_path}: {e}")
+
     def get_system_status(self) -> Dict[str, Any]:
         """Get current system status and statistics"""
         status = {
@@ -482,10 +553,13 @@ def main():
     import argparse
     
     parser = argparse.ArgumentParser(description="Jigyasa AGI System")
-    parser.add_argument('--mode', choices=['train', 'interactive', 'status'], 
+    parser.add_argument('--mode', choices=['train', 'interactive', 'status', 'gui'], 
                        default='interactive', help='Operation mode')
     parser.add_argument('--config', type=str, help='Path to config file')
     parser.add_argument('--load-model', type=str, help='Path to pretrained model')
+    parser.add_argument('--resume', action='store_true', help='Resume training from last checkpoint')
+    parser.add_argument('--checkpoint-dir', type=str, default='./checkpoints', 
+                       help='Directory containing checkpoints')
     
     args = parser.parse_args()
     
@@ -502,26 +576,66 @@ def main():
     if args.mode == 'train':
         print("🚀 Starting full Jigyasa training pipeline...")
         
-        # Phase 1: Foundational training
-        phase1_results = system.phase1_foundational_training()
-        print(f"✅ Phase 1 completed: {phase1_results}")
+        # Check for resume functionality
+        resume_state = None
+        if args.resume:
+            resume_state = system._check_for_existing_checkpoints(args.checkpoint_dir)
+            if resume_state:
+                print(f"📂 Found existing checkpoints! Resuming from: {resume_state['phase']}")
+            else:
+                print("📂 No existing checkpoints found. Starting fresh training.")
         
-        # Phase 2: STEM, coding, and conversational training
-        phase2_results = system.phase2_continuous_learning(
-            learning_topics=None,  # Not using topics anymore
-            learning_cycles=5,
-            dynamic_topics=False  # Using STEM training instead
-        )
-        print(f"✅ Phase 2 completed")
+        # Phase 1: Foundational training
+        if not resume_state or resume_state['phase'] == 'phase1':
+            phase1_results = system.phase1_foundational_training(
+                checkpoint_dir=f"{args.checkpoint_dir}/phase1"
+            )
+            print(f"✅ Phase 1 completed: {phase1_results}")
+        else:
+            print("⏭️ Skipping Phase 1 (already completed)")
+        
+        # Phase 2: STEM, coding, and conversational training  
+        if not resume_state or resume_state['phase'] in ['phase1', 'phase2']:
+            phase2_results = system.phase2_continuous_learning(
+                learning_topics=None,  # Not using topics anymore
+                learning_cycles=5,
+                checkpoint_dir=f"{args.checkpoint_dir}/phase2",
+                dynamic_topics=False  # Using STEM training instead
+            )
+            print(f"✅ Phase 2 completed")
+        else:
+            print("⏭️ Skipping Phase 2 (already completed)")
         
         # Phase 3: Compression
-        deployment_info = system.phase3_compression_deployment()
-        print(f"✅ Phase 3 completed: {deployment_info}")
+        if not resume_state or resume_state['phase'] in ['phase1', 'phase2', 'phase3']:
+            deployment_info = system.phase3_compression_deployment(
+                output_dir=f"{args.checkpoint_dir}/deployment"
+            )
+            print(f"✅ Phase 3 completed: {deployment_info}")
+        else:
+            print("⏭️ Skipping Phase 3 (already completed)")
         
         print("\n🎉 Jigyasa training pipeline completed successfully!")
         
     elif args.mode == 'interactive':
         system.interactive_mode()
+        
+    elif args.mode == 'gui':
+        print("🚀 Launching JIGYASA Web Dashboard...")
+        try:
+            from .web.app import app
+            print("✅ Starting JIGYASA Web Server...")
+            print("📱 Open your browser to: http://localhost:5000")
+            print("🛑 Press Ctrl+C to stop")
+            app.run(host='0.0.0.0', port=5000, debug=False, threaded=True)
+        except ImportError as e:
+            print(f"❌ Web dependencies missing: {e}")
+            print("📦 Installing web dependencies...")
+            import subprocess
+            subprocess.run([sys.executable, '-m', 'pip', 'install', 'flask'])
+            from .web.app import app
+            print("📱 Open your browser to: http://localhost:5000")
+            app.run(host='0.0.0.0', port=5000, debug=False, threaded=True)
         
     elif args.mode == 'status':
         status = system.get_system_status()

@@ -1,0 +1,13 @@
+# Additional requirements for autonomous code editing capabilities
+bandit>=1.7.0         # Security scanning
+coverage>=6.0         # Code coverage analysis
+pytest>=7.0.0         # Testing framework
+pytest-json-report>=1.5.0  # JSON test reports
+GitPython>=3.1.0      # Git operations for version control
+psutil>=5.8.0         # System resource monitoring
+ast-tools>=0.1.0      # AST manipulation utilities (if available)
+safety>=2.0.0         # Security vulnerability checking
+flake8>=4.0.0         # Code quality checking
+mypy>=0.910           # Type checking
+black>=22.0.0         # Code formatting
+isort>=5.10.0         # Import sorting

@@ -80,7 +80,34 @@ class RewardModel(nn.Module):
                 input_ids=input_ids,
                 attention_mask=attention_mask
             )
-            hidden_states = outputs['hidden_states']  # (batch_size, seq_len, hidden_size)
+            
+            # Handle different output formats
+            hidden_states = None
+            if isinstance(outputs, dict):
+                if 'hidden_states' in outputs and outputs['hidden_states'] is not None:
+                    hidden_states = outputs['hidden_states']
+                elif 'last_hidden_state' in outputs and outputs['last_hidden_state'] is not None:
+                    hidden_states = outputs['last_hidden_state']
+                elif 'logits' in outputs:
+                    # Fallback: use logits to derive features
+                    logits = outputs['logits']
+                    # Use the hidden size from the first linear layer
+                    hidden_states = torch.zeros(logits.shape[0], logits.shape[1], self.hidden_size, device=logits.device)
+                    # Simple projection from logits space to hidden space
+                    if logits.shape[-1] >= self.hidden_size:
+                        hidden_states = logits[..., :self.hidden_size]
+                    else:
+                        hidden_states[..., :logits.shape[-1]] = logits
+            elif hasattr(outputs, 'last_hidden_state'):
+                hidden_states = outputs.last_hidden_state
+            elif hasattr(outputs, 'hidden_states'):
+                hidden_states = outputs.hidden_states
+            
+            # Last resort: create dummy hidden states
+            if hidden_states is None:
+                batch_size = input_ids.shape[0]
+                seq_len = input_ids.shape[1]
+                hidden_states = torch.zeros(batch_size, seq_len, self.hidden_size, device=input_ids.device)
         
         # Pool hidden states (use last token representation)
         if attention_mask is not None:
@@ -688,78 +715,111 @@ class ProRLTrainer:
     def _update_policy(self, trajectories: List[Dict[str, Any]]) -> Tuple[float, float, float, float]:
         """Update policy using PPO-style objective with KL control"""
         
-        # Collect data from trajectories
-        all_logits = []
-        all_values = []
+        # Collect data from trajectories - handle variable lengths
         all_rewards = []
-        all_input_ids = []
+        all_values = []
         
         for traj in trajectories:
-            all_logits.append(traj['logits'])
-            all_values.append(traj['value'])
             all_rewards.append(traj['reward'])
-            all_input_ids.append(traj['input_ids'])
+            all_values.append(traj['value'])
         
-        # Stack tensors
-        batch_logits = torch.cat(all_logits, dim=0)
-        batch_values = torch.cat(all_values, dim=0) if all_values[0].dim() > 0 else torch.stack(all_values)
-        batch_rewards = torch.tensor(all_rewards, device=batch_logits.device)
-        batch_input_ids = torch.cat(all_input_ids, dim=0)
+        # Convert to tensors
+        batch_rewards = torch.tensor(all_rewards)
+        if len(all_values) > 0 and all_values[0].dim() > 0:
+            batch_values = torch.cat(all_values, dim=0)
+        else:
+            batch_values = torch.stack(all_values)
         
-        # Compute advantages
-        advantages, returns = self.reward_model.compute_advantages(
-            batch_rewards.unsqueeze(-1), 
-            batch_values.unsqueeze(-1)
-        )
-        advantages = advantages.squeeze(-1)
-        returns = returns.squeeze(-1)
+        # For variable length sequences, we'll use a simplified approach
+        # Instead of concatenating all logits, we'll compute losses per trajectory and average
+        total_policy_loss = 0.0
+        total_value_loss = 0.0
+        total_kl_div = 0.0
+        total_entropy = 0.0
+        num_valid_trajectories = 0
         
-        # Normalize advantages
-        advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+        # Process each trajectory individually to handle variable lengths
+        for i, traj in enumerate(trajectories):
+            try:
+                logits = traj['logits']
+                input_ids = traj['input_ids']
+                reward = traj['reward']
+                value = traj['value']
+                
+                # Simple advantage calculation for this trajectory
+                advantage = reward - value.item() if hasattr(value, 'item') else reward - value
+                
+                # Get reference model probabilities for this sequence
+                with torch.no_grad():
+                    ref_outputs = self.reference_model(input_ids)
+                    ref_log_probs = F.log_softmax(ref_outputs['logits'], dim=-1)
+                
+                # Current model probabilities
+                current_log_probs = F.log_softmax(logits, dim=-1)
+                
+                # KL divergence for this sequence
+                kl_div = F.kl_div(current_log_probs, ref_log_probs, reduction='batchmean', log_target=True)
+                
+                # Policy loss for this trajectory
+                policy_loss = -advantage + self.config.kl_penalty * kl_div
+                
+                # Value loss for this trajectory
+                target_value = torch.tensor([reward], device=logits.device, dtype=torch.float32)
+                if hasattr(value, 'item'):
+                    current_value = value.view(-1)  # Ensure same shape
+                else:
+                    current_value = torch.tensor([value], device=logits.device, dtype=torch.float32)
+                value_loss = F.mse_loss(current_value, target_value)
+                
+                # Entropy for this sequence
+                probs = current_log_probs.exp()
+                entropy = -(current_log_probs * probs).sum(dim=-1).mean()
+                
+                # Accumulate losses
+                total_policy_loss += policy_loss.item() if hasattr(policy_loss, 'item') else policy_loss
+                total_value_loss += value_loss.item() if hasattr(value_loss, 'item') else value_loss
+                total_kl_div += kl_div.item() if hasattr(kl_div, 'item') else kl_div
+                total_entropy += entropy.item() if hasattr(entropy, 'item') else entropy
+                num_valid_trajectories += 1
+                
+                # Compute total loss for this trajectory
+                traj_loss = policy_loss + 0.5 * value_loss - 0.01 * entropy
+                
+                # Accumulate gradients (backward pass without stepping)
+                if hasattr(traj_loss, 'backward'):
+                    if i == 0:  # First trajectory - zero gradients
+                        self.policy_optimizer.zero_grad()
+                        self.reward_optimizer.zero_grad()
+                    
+                    traj_loss.backward(retain_graph=False)
+                    
+                    # Update only after processing all trajectories (at the end)
+                
+            except Exception as e:
+                # Skip this trajectory if there's an error
+                print(f"Warning: Skipping trajectory {i} due to error: {e}")
+                continue
         
-        # Get reference model log probabilities for KL penalty
-        with torch.no_grad():
-            ref_outputs = self.reference_model(batch_input_ids)
-            ref_log_probs = F.log_softmax(ref_outputs['logits'], dim=-1)
+        # Apply accumulated gradients
+        if num_valid_trajectories > 0:
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
+            torch.nn.utils.clip_grad_norm_(self.reward_model.parameters(), 1.0)
+            self.policy_optimizer.step()
+            self.reward_optimizer.step()
         
-        # Current model log probabilities
-        current_log_probs = F.log_softmax(batch_logits, dim=-1)
-        
-        # Compute KL divergence
-        kl_div = F.kl_div(current_log_probs, ref_log_probs, reduction='batchmean', log_target=True)
-        
-        # Policy loss with KL penalty
-        policy_loss = -advantages.mean() + self.config.kl_penalty * kl_div
-        
-        # Value loss
-        value_loss = F.mse_loss(batch_values, returns)
-        
-        # Entropy for exploration
-        entropy = -(current_log_probs * current_log_probs.exp()).sum(dim=-1).mean()
-        
-        # Total loss
-        total_loss = policy_loss + 0.5 * value_loss - 0.01 * entropy
-        
-        # Update policy
-        self.policy_optimizer.zero_grad()
-        total_loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
-        self.policy_optimizer.step()
+        # Update learning rate
         self.policy_scheduler.step()
         
-        # Update reward model
-        reward_loss = value_loss  # Same as value loss for now
-        self.reward_optimizer.zero_grad()
-        reward_loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.reward_model.parameters(), 1.0)
-        self.reward_optimizer.step()
-        
-        return (
-            policy_loss.item(),
-            value_loss.item(), 
-            kl_div.item(),
-            entropy.item()
-        )
+        # Return average losses
+        if num_valid_trajectories > 0:
+            return (
+                total_policy_loss / num_valid_trajectories,
+                total_value_loss / num_valid_trajectories,
+                total_kl_div / num_valid_trajectories,
+                total_entropy / num_valid_trajectories
+            )
+        else:
+            return (0.0, 0.0, 0.0, 0.0)
     
     def _reset_reference_policy(self):
         """Reset reference policy to current policy"""

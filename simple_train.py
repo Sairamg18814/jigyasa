@@ -104,11 +104,29 @@ def simple_training_loop():
     
     print("\n🎉 Training complete!")
     
-    # Save model
+    # Save model with metadata
     save_path = "checkpoints/simple_stem_model"
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    
+    # Save model state
     torch.save(model.state_dict(), save_path + ".pt")
+    
+    # Save training metadata
+    training_info = {
+        'num_epochs': num_epochs,
+        'examples_per_epoch': examples_per_epoch,
+        'final_loss': avg_loss,
+        'total_examples_trained': num_epochs * examples_per_epoch,
+        'model_params': sum(p.numel() for p in model.parameters()),
+        'completion_status': 'completed'
+    }
+    
+    import json
+    with open(save_path + "_info.json", 'w') as f:
+        json.dump(training_info, f, indent=2)
+    
     print(f"💾 Model saved to {save_path}.pt")
+    print(f"📊 Training info saved to {save_path}_info.json")
     
     # Test the model
     print("\n🧪 Testing trained model...")
