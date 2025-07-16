@@ -24,6 +24,8 @@ from jigyasa.autonomous import make_autonomous, autonomous_wrapper
 from jigyasa.autonomous.self_code_editor import initialize_autonomous_code_editor, start_autonomous_improvements, get_autonomous_editor_status
 from jigyasa.autonomous.safe_code_security import scan_code_security, validate_code_security
 from jigyasa.adaptive import detect_system_hardware, start_hardware_monitoring, get_hardware_specs, get_performance_metrics, get_optimal_training_config
+from jigyasa.autonomous.self_improvement_manager import get_improvement_manager, start_maximum_improvement, get_improvement_status
+from jigyasa.autonomous.learning_scheduler import get_learning_scheduler, start_autonomous_learning, get_learning_status as get_autonomous_learning_status
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -322,6 +324,112 @@ def get_training_config():
                 'auto_scale_batch_size': config.auto_scale_batch_size
             }
         })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/improvement/start', methods=['POST'])
+def start_improvement():
+    """Start maximum self-improvement"""
+    try:
+        # Start improvement manager
+        improvement_manager = start_maximum_improvement()
+        improvement_manager.enable_aggressive_mode()
+        
+        # Start learning scheduler
+        learning_scheduler = start_autonomous_learning()
+        
+        log_message("🚀 Started maximum self-improvement system")
+        return jsonify({'success': True, 'message': 'Self-improvement started'})
+    except Exception as e:
+        log_message(f"❌ Failed to start improvement: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/improvement/pause', methods=['POST'])
+def pause_improvement():
+    """Pause self-improvement"""
+    try:
+        manager = get_improvement_manager()
+        manager.pause_improvement()
+        
+        log_message("⏸️ Paused self-improvement")
+        return jsonify({'success': True, 'message': 'Improvement paused'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/improvement/aggressive', methods=['POST'])
+def toggle_aggressive():
+    """Toggle aggressive improvement mode"""
+    try:
+        data = request.get_json()
+        enabled = data.get('enabled', False)
+        
+        manager = get_improvement_manager()
+        if enabled:
+            manager.enable_aggressive_mode()
+            log_message("⚡ Enabled aggressive improvement mode")
+        else:
+            manager.set_safety_mode(True)
+            log_message("🛡️ Enabled safety mode")
+        
+        return jsonify({'success': True, 'enabled': enabled})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/improvement/focus', methods=['POST'])
+def set_improvement_focus():
+    """Set improvement focus area"""
+    try:
+        data = request.get_json()
+        focus = data.get('focus', 'balanced')
+        
+        manager = get_improvement_manager()
+        
+        # Map focus areas to dimensions
+        from jigyasa.autonomous.self_improvement_manager import ImprovementDimension
+        
+        if focus == 'speed':
+            dimensions = [
+                ImprovementDimension.SPEED_PERFORMANCE,
+                ImprovementDimension.ALGORITHM_ENHANCEMENT,
+                ImprovementDimension.MEMORY_OPTIMIZATION
+            ]
+        elif focus == 'accuracy':
+            dimensions = [
+                ImprovementDimension.ACCURACY_IMPROVEMENT,
+                ImprovementDimension.REASONING_CAPABILITY,
+                ImprovementDimension.ERROR_REDUCTION
+            ]
+        elif focus == 'creativity':
+            dimensions = [
+                ImprovementDimension.CREATIVITY_ENHANCEMENT,
+                ImprovementDimension.CONVERSATION_QUALITY,
+                ImprovementDimension.LEARNING_EFFICIENCY
+            ]
+        else:  # balanced
+            dimensions = None  # All dimensions
+        
+        manager.start_autonomous_improvement(dimensions)
+        log_message(f"🎯 Set improvement focus to: {focus}")
+        
+        return jsonify({'success': True, 'focus': focus})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/improvement/status')
+def improvement_status():
+    """Get improvement status report"""
+    try:
+        report = get_improvement_status()
+        return jsonify({'success': True, 'report': report})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/learning/status')
+def learning_status():
+    """Get learning status"""
+    try:
+        status = get_autonomous_learning_status()
+        return jsonify({'success': True, 'status': status})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 

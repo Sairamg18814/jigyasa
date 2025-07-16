@@ -344,6 +344,65 @@
                 font-size: 2em;
             }
         }
+
+        /* Improvement Tab Styles */
+        .dimensions-grid {
+            display: grid;
+            gap: 15px;
+        }
+
+        .dimension-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .dimension-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateX(5px);
+        }
+
+        .dimension-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .dimension-icon {
+            font-size: 1.5em;
+            margin-right: 10px;
+        }
+
+        .dimension-name {
+            flex: 1;
+            font-weight: 500;
+        }
+
+        .dimension-score {
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
+        .progress-bar {
+            background: rgba(255, 255, 255, 0.1);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #2196F3);
+            transition: width 0.5s ease;
+            border-radius: 4px;
+        }
+
+        .improvement-controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
     </style>
 </head>
 <body>
@@ -360,6 +419,7 @@
             <button class="tab" onclick="showTab('system')">⚙️ System</button>
             <button class="tab" onclick="showTab('hardware')">💻 Hardware</button>
             <button class="tab" onclick="showTab('code')">🔧 Code Editor</button>
+            <button class="tab" onclick="showTab('improvement')">🚀 Self-Improvement</button>
             <button class="tab" onclick="showTab('logs')">📋 Logs</button>
         </div>
 
@@ -731,6 +791,197 @@
                 </div>
                 <div class="logs-container" id="system-logs">
                     Loading logs...
+                </div>
+            </div>
+        </div>
+
+        <!-- Self-Improvement Tab -->
+        <div id="improvement" class="tab-content">
+            <div class="card">
+                <h3>🚀 Autonomous Self-Improvement System</h3>
+                <p style="color: #888; margin-bottom: 20px;">JIGYASA continuously improves itself across 10 dimensions</p>
+                
+                <div class="improvement-controls" style="margin-bottom: 20px;">
+                    <button class="button primary" onclick="startMaximumImprovement()" id="start-improvement-btn">
+                        🚀 Start Maximum Improvement
+                    </button>
+                    <button class="button secondary" onclick="pauseImprovement()" id="pause-improvement-btn" style="display: none;">
+                        ⏸️ Pause Improvement
+                    </button>
+                    <button class="button danger" onclick="toggleAggressiveMode()" id="aggressive-mode-btn">
+                        ⚡ Enable Aggressive Mode
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid">
+                <!-- Overall Progress Card -->
+                <div class="card">
+                    <h3>📊 Overall Progress</h3>
+                    <div class="metric">
+                        <div class="metric-label">Total Improvement</div>
+                        <div class="metric-value" id="overall-improvement">0%</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Improvement Velocity</div>
+                        <div class="metric-value" id="improvement-velocity">0.0/hr</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Time to Maximum</div>
+                        <div class="metric-value" id="time-to-max">Calculating...</div>
+                    </div>
+                </div>
+
+                <!-- Learning Status Card -->
+                <div class="card">
+                    <h3>🎓 Learning Status</h3>
+                    <div class="metric">
+                        <div class="metric-label">Active Sessions</div>
+                        <div class="metric-value" id="active-sessions">0</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Knowledge Mastery</div>
+                        <div class="metric-value" id="knowledge-mastery">0%</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Learning Velocity</div>
+                        <div class="metric-value" id="learning-velocity">0.0</div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions Card -->
+                <div class="card">
+                    <h3>⚡ Quick Actions</h3>
+                    <div style="display: grid; gap: 10px;">
+                        <button class="button" onclick="focusOnSpeed()">🚀 Focus on Speed</button>
+                        <button class="button" onclick="focusOnAccuracy()">🎯 Focus on Accuracy</button>
+                        <button class="button" onclick="focusOnCreativity()">🎨 Focus on Creativity</button>
+                        <button class="button" onclick="balancedImprovement()">⚖️ Balanced Growth</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Improvement Dimensions -->
+            <div class="card" style="margin-top: 20px;">
+                <h3>📈 Improvement Dimensions</h3>
+                <div class="dimensions-grid">
+                    <div class="dimension-item">
+                        <div class="dimension-header">
+                            <span class="dimension-icon">🔧</span>
+                            <span class="dimension-name">Code Optimization</span>
+                            <span class="dimension-score" id="code-optimization-score">50%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="code-optimization-progress" style="width: 50%"></div>
+                        </div>
+                    </div>
+
+                    <div class="dimension-item">
+                        <div class="dimension-header">
+                            <span class="dimension-icon">🧮</span>
+                            <span class="dimension-name">Algorithm Enhancement</span>
+                            <span class="dimension-score" id="algorithm-score">50%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="algorithm-progress" style="width: 50%"></div>
+                        </div>
+                    </div>
+
+                    <div class="dimension-item">
+                        <div class="dimension-header">
+                            <span class="dimension-icon">📚</span>
+                            <span class="dimension-name">Learning Efficiency</span>
+                            <span class="dimension-score" id="learning-score">50%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="learning-progress" style="width: 50%"></div>
+                        </div>
+                    </div>
+
+                    <div class="dimension-item">
+                        <div class="dimension-header">
+                            <span class="dimension-icon">🎯</span>
+                            <span class="dimension-name">Reasoning Capability</span>
+                            <span class="dimension-score" id="reasoning-score">50%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="reasoning-progress" style="width: 50%"></div>
+                        </div>
+                    </div>
+
+                    <div class="dimension-item">
+                        <div class="dimension-header">
+                            <span class="dimension-icon">💾</span>
+                            <span class="dimension-name">Memory Optimization</span>
+                            <span class="dimension-score" id="memory-score">50%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="memory-progress" style="width: 50%"></div>
+                        </div>
+                    </div>
+
+                    <div class="dimension-item">
+                        <div class="dimension-header">
+                            <span class="dimension-icon">⚡</span>
+                            <span class="dimension-name">Speed Performance</span>
+                            <span class="dimension-score" id="speed-score">50%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="speed-progress" style="width: 50%"></div>
+                        </div>
+                    </div>
+
+                    <div class="dimension-item">
+                        <div class="dimension-header">
+                            <span class="dimension-icon">🎯</span>
+                            <span class="dimension-name">Accuracy Improvement</span>
+                            <span class="dimension-score" id="accuracy-score">50%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="accuracy-progress" style="width: 50%"></div>
+                        </div>
+                    </div>
+
+                    <div class="dimension-item">
+                        <div class="dimension-header">
+                            <span class="dimension-icon">🎨</span>
+                            <span class="dimension-name">Creativity Enhancement</span>
+                            <span class="dimension-score" id="creativity-score">50%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="creativity-progress" style="width: 50%"></div>
+                        </div>
+                    </div>
+
+                    <div class="dimension-item">
+                        <div class="dimension-header">
+                            <span class="dimension-icon">💬</span>
+                            <span class="dimension-name">Conversation Quality</span>
+                            <span class="dimension-score" id="conversation-score">50%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="conversation-progress" style="width: 50%"></div>
+                        </div>
+                    </div>
+
+                    <div class="dimension-item">
+                        <div class="dimension-header">
+                            <span class="dimension-icon">🛡️</span>
+                            <span class="dimension-name">Error Reduction</span>
+                            <span class="dimension-score" id="error-score">50%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="error-progress" style="width: 50%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Improvement Chart -->
+            <div class="card" style="margin-top: 20px;">
+                <h3>📈 Improvement Timeline</h3>
+                <div class="chart-container">
+                    <canvas id="improvementChart"></canvas>
                 </div>
             </div>
         </div>
@@ -1459,6 +1710,256 @@
             initCharts();
             initHardwareChart();
             
+            // Self-Improvement Functions
+            let improvementActive = false;
+            let aggressiveMode = false;
+            let improvementChart = null;
+
+            window.startMaximumImprovement = async function() {
+                try {
+                    const response = await fetch('/api/improvement/start', { method: 'POST' });
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        improvementActive = true;
+                        document.getElementById('start-improvement-btn').style.display = 'none';
+                        document.getElementById('pause-improvement-btn').style.display = 'inline-block';
+                        showNotification('🚀 Maximum improvement started!', 'success');
+                    }
+                } catch (error) {
+                    console.error('Error starting improvement:', error);
+                    showNotification('❌ Failed to start improvement', 'error');
+                }
+            }
+
+            window.pauseImprovement = async function() {
+                try {
+                    const response = await fetch('/api/improvement/pause', { method: 'POST' });
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        improvementActive = false;
+                        document.getElementById('start-improvement-btn').style.display = 'inline-block';
+                        document.getElementById('pause-improvement-btn').style.display = 'none';
+                        showNotification('⏸️ Improvement paused', 'info');
+                    }
+                } catch (error) {
+                    console.error('Error pausing improvement:', error);
+                }
+            }
+
+            window.toggleAggressiveMode = async function() {
+                try {
+                    aggressiveMode = !aggressiveMode;
+                    const response = await fetch('/api/improvement/aggressive', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ enabled: aggressiveMode })
+                    });
+                    
+                    const btn = document.getElementById('aggressive-mode-btn');
+                    if (aggressiveMode) {
+                        btn.textContent = '🛡️ Disable Aggressive Mode';
+                        btn.classList.remove('danger');
+                        btn.classList.add('secondary');
+                        showNotification('⚡ Aggressive mode enabled - faster improvement!', 'success');
+                    } else {
+                        btn.textContent = '⚡ Enable Aggressive Mode';
+                        btn.classList.remove('secondary');
+                        btn.classList.add('danger');
+                        showNotification('🛡️ Aggressive mode disabled - safer improvement', 'info');
+                    }
+                } catch (error) {
+                    console.error('Error toggling aggressive mode:', error);
+                }
+            }
+
+            window.focusOnSpeed = async function() {
+                await setImprovementFocus('speed');
+                showNotification('🚀 Focusing on speed improvements', 'info');
+            }
+
+            window.focusOnAccuracy = async function() {
+                await setImprovementFocus('accuracy');
+                showNotification('🎯 Focusing on accuracy improvements', 'info');
+            }
+
+            window.focusOnCreativity = async function() {
+                await setImprovementFocus('creativity');
+                showNotification('🎨 Focusing on creativity improvements', 'info');
+            }
+
+            window.balancedImprovement = async function() {
+                await setImprovementFocus('balanced');
+                showNotification('⚖️ Balanced improvement across all dimensions', 'info');
+            }
+
+            async function setImprovementFocus(focus) {
+                try {
+                    await fetch('/api/improvement/focus', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ focus })
+                    });
+                } catch (error) {
+                    console.error('Error setting improvement focus:', error);
+                }
+            }
+
+            async function updateImprovementStatus() {
+                try {
+                    const response = await fetch('/api/improvement/status');
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        const report = result.report;
+                        
+                        // Update overall metrics
+                        document.getElementById('overall-improvement').textContent = 
+                            `${report.overall_improvement.toFixed(1)}%`;
+                        document.getElementById('improvement-velocity').textContent = 
+                            `${report.improvement_velocity.toFixed(2)}/hr`;
+                        
+                        if (report.estimated_time_to_maximum) {
+                            const hours = report.estimated_time_to_maximum;
+                            const days = Math.floor(hours / 24);
+                            const remainingHours = Math.floor(hours % 24);
+                            document.getElementById('time-to-max').textContent = 
+                                `${days}d ${remainingHours}h`;
+                        }
+                        
+                        // Update dimensions
+                        if (report.dimensions) {
+                            updateDimensionProgress(report.dimensions);
+                        }
+                        
+                        // Update chart
+                        if (report.history) {
+                            updateImprovementChart(report.history);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error updating improvement status:', error);
+                }
+            }
+
+            async function updateLearningStatus() {
+                try {
+                    const response = await fetch('/api/learning/status');
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        const status = result.status;
+                        document.getElementById('active-sessions').textContent = status.active_sessions;
+                        document.getElementById('knowledge-mastery').textContent = 
+                            `${(status.estimated_mastery * 100).toFixed(1)}%`;
+                        document.getElementById('learning-velocity').textContent = 
+                            status.learning_velocity.toFixed(2);
+                    }
+                } catch (error) {
+                    console.error('Error updating learning status:', error);
+                }
+            }
+
+            function updateDimensionProgress(dimensions) {
+                const dimensionMap = {
+                    'code_optimization': 'code-optimization',
+                    'algorithm_enhancement': 'algorithm',
+                    'learning_efficiency': 'learning',
+                    'reasoning_capability': 'reasoning',
+                    'memory_optimization': 'memory',
+                    'speed_performance': 'speed',
+                    'accuracy_improvement': 'accuracy',
+                    'creativity_enhancement': 'creativity',
+                    'conversation_quality': 'conversation',
+                    'error_reduction': 'error'
+                };
+                
+                for (const [key, data] of Object.entries(dimensions)) {
+                    const elementKey = dimensionMap[key];
+                    if (elementKey) {
+                        const score = data.current_score;
+                        document.getElementById(`${elementKey}-score`).textContent = `${score.toFixed(0)}%`;
+                        document.getElementById(`${elementKey}-progress`).style.width = `${score}%`;
+                    }
+                }
+            }
+
+            function initImprovementChart() {
+                const ctx = document.getElementById('improvementChart');
+                if (!ctx) return;
+                
+                improvementChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Overall Improvement',
+                            data: [],
+                            borderColor: '#4CAF50',
+                            backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                labels: { color: '#ffffff' }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                ticks: { color: '#888' },
+                                grid: { color: '#333' }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: { 
+                                    color: '#888',
+                                    callback: function(value) { return value + '%'; }
+                                },
+                                grid: { color: '#333' }
+                            }
+                        }
+                    }
+                });
+            }
+
+            function updateImprovementChart(history) {
+                if (!improvementChart || !history.length) return;
+                
+                const labels = history.map(h => 
+                    new Date(h.timestamp).toLocaleTimeString()
+                ).slice(-20);
+                
+                const data = history.map(h => h.score).slice(-20);
+                
+                improvementChart.data.labels = labels;
+                improvementChart.data.datasets[0].data = data;
+                improvementChart.update();
+            }
+
+            function showNotification(message, type) {
+                // Simple notification (you can enhance this)
+                console.log(`[${type}] ${message}`);
+            }
+
+            // Initialize improvement chart when tab is shown
+            const originalShowTab = window.showTab;
+            window.showTab = function(tabName) {
+                originalShowTab(tabName);
+                if (tabName === 'improvement' && !improvementChart) {
+                    setTimeout(() => {
+                        initImprovementChart();
+                        updateImprovementStatus();
+                        updateLearningStatus();
+                    }, 100);
+                }
+            };
+
             // Start periodic updates
             setInterval(updateStatus, 2000);   // Every 2 seconds
             setInterval(updateMetrics, 5000);  // Every 5 seconds
@@ -1466,6 +1967,8 @@
             setInterval(refreshLogs, 10000);   // Every 10 seconds
             setInterval(refreshCodeStatus, 30000); // Every 30 seconds for code status
             setInterval(refreshHardwarePerformance, 5000); // Every 5 seconds for hardware
+            setInterval(updateImprovementStatus, 10000); // Every 10 seconds for improvement
+            setInterval(updateLearningStatus, 15000); // Every 15 seconds for learning
             
             // Initial updates
             updateStatus();
