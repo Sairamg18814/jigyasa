@@ -178,64 +178,87 @@ class JigyasaSystem:
         logging.info("Starting Phase 2: Continuous Learning with SEAL")
         self.training_phase = "seal"
         
-        # Use dynamic topic generation if enabled
-        if dynamic_topics or learning_topics is None:
-            from .cognitive.dynamic_topics import DynamicTopicGenerator
-            topic_generator = DynamicTopicGenerator()
-            logging.info("Using dynamic topic generation for continuous learning")
+        # Use STEM and coding training instead of topics
+        from .cognitive.stem_training import STEMTrainingGenerator, ConversationalTrainer
+        stem_generator = STEMTrainingGenerator()
+        conv_trainer = ConversationalTrainer()
+        logging.info("Using STEM, coding, and conversational training")
         
         learning_results = []
         
         for cycle in range(learning_cycles):
             logging.info(f"Learning cycle {cycle + 1}/{learning_cycles}")
             
-            # Generate topics for this cycle
-            if dynamic_topics or learning_topics is None:
-                # Generate 3-5 topics per cycle
-                num_topics = random.randint(3, 5)
-                cycle_topics = topic_generator.generate_dynamic_topics(
-                    num_topics=num_topics,
-                    include_trends=True,
-                    diversity_weight=0.8
-                )
-                logging.info(f"Generated {len(cycle_topics)} dynamic topics for cycle {cycle + 1}")
-            else:
-                cycle_topics = learning_topics
+            # Generate STEM and coding problems for this cycle
+            batch_size = random.randint(20, 30)
+            
+            # Mix of problem types
+            problem_mix = {
+                'math': 0.4,      # 40% math problems
+                'coding': 0.4,    # 40% coding problems  
+                'science': 0.2    # 20% science problems
+            }
+            
+            # Generate training examples
+            training_examples = stem_generator.generate_training_batch(
+                batch_size=batch_size,
+                mix=problem_mix
+            )
+            
+            # Add conversational examples
+            conv_examples = conv_trainer.generate_conversational_examples(count=10)
+            
+            logging.info(f"Generated {len(training_examples)} STEM problems and {len(conv_examples)} conversational examples for cycle {cycle + 1}")
             
             cycle_results = {}
             
-            for topic in cycle_topics:
-                # Acquire new data for the topic
-                logging.info(f"Acquiring data for topic: {topic}")
-                scraped_contents = self.data_engine.acquire_data_for_topic(
-                    topic, max_sources=10
+            # Train on STEM examples
+            for example in training_examples:
+                # Create training data from the example
+                training_data = {
+                    'input': example.question,
+                    'output': example.answer,
+                    'reasoning': example.reasoning_steps,
+                    'category': example.category,
+                    'difficulty': example.difficulty
+                }
+                
+                logging.info(f"Training on {example.category} problem ({example.difficulty})")
+                
+                # Create evaluation task
+                eval_task = {
+                    'type': 'problem_solving',
+                    'question': example.question,
+                    'expected_answer': example.answer,
+                    'reasoning_steps': example.reasoning_steps
+                }
+                
+                # Train SEAL episode on this example
+                episode_results = self.seal_trainer.train_episode(
+                    new_contexts=[json.dumps(training_data)],
+                    evaluation_tasks=[eval_task],
+                    episode_id=f"{cycle}_{example.category}_{example.difficulty}"
                 )
                 
-                # Preprocess the data
-                processing_results = self.preprocessor.process_batch(scraped_contents)
+                cycle_results[f"{example.category}_{example.difficulty}"] = episode_results
+            
+            # Train on conversational examples
+            for conv_example in conv_examples:
+                conv_task = {
+                    'type': 'conversation',
+                    'input': conv_example['input'],
+                    'expected_response': conv_example['response'],
+                    'style': conv_example['style']
+                }
                 
-                # Filter high-quality content
-                high_quality_content = [
-                    result for result in processing_results 
-                    if result.should_include and result.quality_score > 0.7
-                ]
+                # Quick conversational training
+                conv_results = self.seal_trainer.train_episode(
+                    new_contexts=[json.dumps(conv_example)],
+                    evaluation_tasks=[conv_task],
+                    episode_id=f"{cycle}_conversation"
+                )
                 
-                if not high_quality_content:
-                    logging.warning(f"No high-quality content found for topic: {topic}")
-                    continue
-                
-                # Create evaluation tasks from the content
-                evaluation_tasks = self._create_evaluation_tasks(high_quality_content)
-                
-                # Train SEAL episode
-                for content in high_quality_content[:3]:  # Limit to top 3 pieces
-                    episode_results = self.seal_trainer.train_episode(
-                        new_contexts=[content.processed_content],
-                        evaluation_tasks=evaluation_tasks,
-                        episode_id=f"{cycle}_{topic}"
-                    )
-                    
-                    cycle_results[f"{topic}_episode"] = episode_results
+                cycle_results['conversational'] = conv_results
             
             learning_results.append(cycle_results)
             
@@ -475,11 +498,11 @@ def main():
         phase1_results = system.phase1_foundational_training()
         print(f"✅ Phase 1 completed: {phase1_results}")
         
-        # Phase 2: Continuous learning with dynamic topics
+        # Phase 2: STEM, coding, and conversational training
         phase2_results = system.phase2_continuous_learning(
-            learning_topics=None,  # Use dynamic topics
+            learning_topics=None,  # Not using topics anymore
             learning_cycles=5,
-            dynamic_topics=True
+            dynamic_topics=False  # Using STEM training instead
         )
         print(f"✅ Phase 2 completed")
         
