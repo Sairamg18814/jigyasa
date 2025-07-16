@@ -306,6 +306,15 @@ class JigyasaSystem:
                 if not user_input:
                     continue
                 
+                # Check for simple greetings
+                if user_input.lower() in ['hello', 'hi', 'hey', 'good morning', 'good afternoon', 'good evening']:
+                    # Simple response for greetings
+                    print("\n💭 Response:")
+                    print("-" * 30)
+                    print("Hello! I'm Jigyasa, your AI assistant. How can I help you today?")
+                    print(f"\n📊 Confidence: 1.00")
+                    continue
+                
                 # Process with self-correction
                 print("\n🤔 Thinking...")
                 

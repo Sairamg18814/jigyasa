@@ -175,9 +175,11 @@ Verification Questions:"""
         # Generate verification questions
         generated = model.generate(
             input_text=prompt,
-            max_new_tokens=200,
-            temperature=0.3,
-            do_sample=True
+            max_new_tokens=150,
+            temperature=0.2,
+            do_sample=True,
+            top_p=0.9,
+            repetition_penalty=1.2
         )
         
         # Extract questions
@@ -657,6 +659,30 @@ class SelfCorrectionModule:
         Main method for "thinking before answering"
         Generates initial response and applies self-correction
         """
+        # Check if query is simple and doesn't need complex verification
+        simple_queries = ['hello', 'hi', 'hey', 'thanks', 'thank you', 'goodbye', 'bye']
+        if query.lower().strip() in simple_queries:
+            # Generate simple response without complex verification
+            response = self.model.generate(
+                input_text=query,
+                max_new_tokens=50,
+                temperature=0.7,
+                do_sample=True,
+                top_p=0.9
+            )
+            
+            return {
+                'query': query,
+                'initial_response': response,
+                'final_response': response,
+                'thinking_process': "Simple query - no verification needed",
+                'corrections_made': [],
+                'confidence_score': 0.95,
+                'verification_steps': [],
+                'strategy_used': 'direct',
+                'metadata': {'simple_query': True}
+            }
+        
         # Step 1: Generate initial response
         if context:
             prompt = f"Context: {context}\n\nQuestion: {query}\n\nAnswer:"
@@ -665,9 +691,11 @@ class SelfCorrectionModule:
         
         initial_response = self.model.generate(
             input_text=prompt,
-            max_new_tokens=250,
+            max_new_tokens=100,
             temperature=0.7,
-            do_sample=True
+            do_sample=True,
+            top_p=0.9,
+            repetition_penalty=1.2
         )
         
         if "Answer:" in initial_response:
