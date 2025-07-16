@@ -346,10 +346,6 @@ If you use Jigyasa in your research, please cite:
 
 <div align="center">
 
-**🚀 Generated with [Claude Code](https://claude.ai/code)**
 
-**Co-Authored-By: Claude <noreply@anthropic.com>**
-
-*Building the future of artificial general intelligence, one curious step at a time.*
 
 </div>
