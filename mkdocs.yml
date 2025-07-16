@@ -1,10 +1,10 @@
 site_name: JIGYASA - Self-Improving AGI System
 site_description: A Self-Improving Artificial General Intelligence System
 site_author: JIGYASA Team
-site_url: https://yourusername.github.io/jigyasa
+site_url: https://sairamg18814.github.io/jigyasa
 
-repo_name: yourusername/jigyasa
-repo_url: https://github.com/yourusername/jigyasa
+repo_name: Sairamg18814/jigyasa
+repo_url: https://github.com/Sairamg18814/jigyasa
 edit_uri: edit/main/docs/
 
 theme:
@@ -126,7 +126,7 @@ nav:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/yourusername/jigyasa
+      link: https://github.com/Sairamg18814/jigyasa
     - icon: fontawesome/brands/twitter
       link: https://twitter.com/jigyasa_ai
     - icon: fontawesome/brands/discord

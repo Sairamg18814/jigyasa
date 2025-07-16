@@ -112,9 +112,9 @@ print(f"\n📊 Confidence: {result['confidence_score']:.2f}")
 
 ## Join Our Community
 
-- 🌟 [Star us on GitHub](https://github.com/yourusername/jigyasa)
+- 🌟 [Star us on GitHub](https://github.com/Sairamg18814/jigyasa)
 - 💬 [Join our Discord](https://discord.gg/jigyasa)
-- 🐛 [Report Issues](https://github.com/yourusername/jigyasa/issues)
+- 🐛 [Report Issues](https://github.com/Sairamg18814/jigyasa/issues)
 - 🤝 [Contribute](contributing/guidelines.md)
 
 ## Latest Updates
