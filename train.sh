@@ -40,8 +40,8 @@ fi
 echo "📦 Checking dependencies..."
 python3 -c "import torch, transformers, einops, peft" 2>/dev/null
 if [ $? -ne 0 ]; then
-    echo "❌ Missing dependencies. Installing..."
-    pip3 install -r jigyasa/requirements.txt
+    echo "❌ Missing dependencies. Installing core packages..."
+    pip3 install torch numpy transformers einops peft sympy networkx beautifulsoup4 requests python-dotenv
 fi
 
 # Set environment variables

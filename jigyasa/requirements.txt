@@ -39,7 +39,7 @@ optimum>=1.9.0
 
 # Web Automation
 selenium>=4.10.0
-scrapegraph-ai>=1.0.0
+# scrapegraph-ai>=1.0.0  # Optional - not available on PyPI yet
 
 # API and Deployment
 fastapi>=0.100.0
