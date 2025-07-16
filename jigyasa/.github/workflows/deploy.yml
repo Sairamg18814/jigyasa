@@ -1,0 +1,247 @@
+name: Deploy Jigyasa
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8, 3.9, "3.10", "3.11"]
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov black flake8 mypy
+    
+    - name: Lint with flake8
+      run: |
+        flake8 jigyasa --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 jigyasa --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    
+    - name: Format check with black
+      run: |
+        black --check jigyasa
+    
+    - name: Type check with mypy
+      run: |
+        mypy jigyasa --ignore-missing-imports
+      continue-on-error: true
+    
+    - name: Test with pytest
+      run: |
+        pytest tests/ --cov=jigyasa --cov-report=xml
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+
+  build-model:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.10"
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Build compressed model
+      run: |
+        python scripts/build_release_model.py
+      env:
+        WANDB_MODE: disabled
+    
+    - name: Upload model artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: jigyasa-models
+        path: |
+          models/jigyasa-base.gguf
+          models/jigyasa-chat.gguf
+          models/compression_info.json
+
+  deploy-huggingface:
+    needs: [test, build-model]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        lfs: true
+    
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.10"
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install huggingface_hub
+    
+    - name: Download model artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: jigyasa-models
+        path: models/
+    
+    - name: Deploy to Hugging Face Hub
+      run: |
+        python scripts/deploy_to_hf.py
+      env:
+        HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        HF_REPO: "jigyasa-ai/jigyasa"
+
+  deploy-pages:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.10"
+    
+    - name: Install documentation dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install mkdocs mkdocs-material mkdocs-mermaid2-plugin
+    
+    - name: Build documentation
+      run: |
+        mkdocs build --strict
+    
+    - name: Setup Pages
+      uses: actions/configure-pages@v3
+    
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v2
+      with:
+        path: 'site'
+    
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v2
+
+  create-release:
+    needs: [test, build-model]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download model artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: jigyasa-models
+        path: models/
+    
+    - name: Create Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Jigyasa ${{ github.ref }}
+        body: |
+          ## Jigyasa Release
+          
+          🧠 **Self-Improving, Agentic Language Model**
+          
+          ### What's Included
+          - `jigyasa-base.gguf` - Base model for inference
+          - `jigyasa-chat.gguf` - Chat-optimized model
+          - Full source code and documentation
+          
+          ### Features
+          - ✅ Byte Latent Transformer architecture
+          - ✅ Self-adapting capabilities (SEAL)
+          - ✅ Advanced reasoning (ProRL)
+          - ✅ Self-correction and introspection
+          - ✅ Autonomous data acquisition
+          - ✅ On-device optimization
+          
+          ### Quick Start
+          ```bash
+          pip install jigyasa
+          jigyasa interactive --model jigyasa-chat.gguf
+          ```
+          
+          ### Requirements
+          - Python 3.8+
+          - PyTorch 2.0+
+          - 8GB RAM minimum (16GB recommended)
+          
+          See the [documentation](https://jigyasa-ai.github.io/jigyasa) for detailed usage instructions.
+          
+          🚀 **Generated with [Claude Code](https://claude.ai/code)**
+          
+          Co-Authored-By: Claude <noreply@anthropic.com>
+        draft: false
+        prerelease: false
+    
+    - name: Upload Base Model
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: models/jigyasa-base.gguf
+        asset_name: jigyasa-base.gguf
+        asset_content_type: application/octet-stream
+    
+    - name: Upload Chat Model
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: models/jigyasa-chat.gguf
+        asset_name: jigyasa-chat.gguf
+        asset_content_type: application/octet-stream

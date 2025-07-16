@@ -1,0 +1,136 @@
+site_name: JIGYASA - Self-Improving AGI System
+site_description: A Self-Improving Artificial General Intelligence System
+site_author: JIGYASA Team
+site_url: https://yourusername.github.io/jigyasa
+
+repo_name: yourusername/jigyasa
+repo_url: https://github.com/yourusername/jigyasa
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  custom_dir: docs/overrides
+  logo: assets/logo.png
+  favicon: assets/favicon.ico
+  
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.indexes
+    - toc.follow
+    - toc.integrate
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
+    - content.code.annotation
+    - content.code.copy
+    
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+        
+  font:
+    text: Roboto
+    code: Roboto Mono
+
+plugins:
+  - search
+  - mermaid2:
+      version: 10.6.0
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_source: true
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:mermaid2.fence_mermaid_custom
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.details
+  - pymdownx.mark
+  - pymdownx.critic
+  - pymdownx.keys
+  - pymdownx.smartsymbols
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+  - admonition
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: getting-started/installation.md
+    - Quick Start: getting-started/quickstart.md
+    - Configuration: getting-started/configuration.md
+  - Architecture:
+    - Overview: architecture/overview.md
+    - Core Components: architecture/components.md
+    - Cognitive System: architecture/cognitive.md
+    - Data Pipeline: architecture/data.md
+  - Features:
+    - Self-Correction: features/self-correction.md
+    - Continuous Learning: features/continuous-learning.md
+    - Advanced Reasoning: features/reasoning.md
+    - Safety & Ethics: features/safety.md
+  - API Reference:
+    - Core API: api/core.md
+    - Cognitive API: api/cognitive.md
+    - Data API: api/data.md
+    - Utils: api/utils.md
+  - Tutorials:
+    - Basic Usage: tutorials/basic.md
+    - Training Models: tutorials/training.md
+    - Custom Strategies: tutorials/custom.md
+    - Deployment: tutorials/deployment.md
+  - Contributing:
+    - Guidelines: contributing/guidelines.md
+    - Development: contributing/development.md
+    - Testing: contributing/testing.md
+  - About:
+    - Roadmap: about/roadmap.md
+    - Team: about/team.md
+    - License: about/license.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/yourusername/jigyasa
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/jigyasa_ai
+    - icon: fontawesome/brands/discord
+      link: https://discord.gg/jigyasa
+  analytics:
+    provider: google
+    property: G-XXXXXXXXXX

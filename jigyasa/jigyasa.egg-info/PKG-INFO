@@ -1,0 +1,167 @@
+Metadata-Version: 2.4
+Name: jigyasa
+Version: 0.1.0
+Summary: A Self-Improving, Agentic Language Model Framework
+Home-page: https://github.com/your-username/jigyasa
+Author: Jigyasa Development Team
+Author-email: dev@jigyasa.ai
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Requires-Dist: torch>=2.0.0
+Requires-Dist: transformers>=4.30.0
+Requires-Dist: tokenizers>=0.13.0
+Requires-Dist: accelerate>=0.20.0
+Requires-Dist: datasets>=2.10.0
+Requires-Dist: peft>=0.3.0
+Requires-Dist: einops>=0.6.0
+Requires-Dist: trl>=0.4.0
+Requires-Dist: wandb>=0.15.0
+Requires-Dist: beautifulsoup4>=4.12.0
+Requires-Dist: scrapy>=2.9.0
+Requires-Dist: playwright>=1.35.0
+Requires-Dist: requests>=2.31.0
+Requires-Dist: pandas>=2.0.0
+Requires-Dist: numpy>=1.24.0
+Requires-Dist: langchain>=0.0.200
+Requires-Dist: langchain-community>=0.0.20
+Requires-Dist: chromadb>=0.4.0
+Requires-Dist: faiss-cpu>=1.7.4
+Requires-Dist: sympy>=1.12
+Requires-Dist: networkx>=3.1
+Requires-Dist: rdflib>=6.3.0
+Requires-Dist: onnx>=1.14.0
+Requires-Dist: optimum>=1.9.0
+Requires-Dist: selenium>=4.10.0
+Requires-Dist: scrapegraph-ai>=1.0.0
+Requires-Dist: fastapi>=0.100.0
+Requires-Dist: uvicorn>=0.22.0
+Requires-Dist: pydantic>=2.0.0
+Requires-Dist: huggingface-hub>=0.15.0
+Requires-Dist: pytest>=7.4.0
+Requires-Dist: black>=23.0.0
+Requires-Dist: flake8>=6.0.0
+Requires-Dist: mypy>=1.4.0
+Requires-Dist: pre-commit>=3.3.0
+Requires-Dist: scipy>=1.10.0
+Requires-Dist: scikit-learn>=1.3.0
+Requires-Dist: matplotlib>=3.7.0
+Requires-Dist: seaborn>=0.12.0
+Requires-Dist: anthropic>=0.3.0
+Requires-Dist: python-dotenv>=1.0.0
+Requires-Dist: configparser>=5.3.0
+Provides-Extra: dev
+Requires-Dist: pytest>=7.4.0; extra == "dev"
+Requires-Dist: black>=23.0.0; extra == "dev"
+Requires-Dist: flake8>=6.0.0; extra == "dev"
+Requires-Dist: mypy>=1.4.0; extra == "dev"
+Requires-Dist: pre-commit>=3.3.0; extra == "dev"
+Provides-Extra: full
+Requires-Dist: jupyter>=1.0.0; extra == "full"
+Requires-Dist: ipywidgets>=8.0.0; extra == "full"
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: home-page
+Dynamic: provides-extra
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
+
+# Jigyasa: A Self-Improving, Agentic Language Model
+
+Jigyasa (Sanskrit: जिज्ञासा, meaning "curiosity" or "thirst for knowledge") is a comprehensive framework for building a self-improving, agentic language model that combines cutting-edge research in transformer architectures, continuous learning, and autonomous reasoning.
+
+## Key Features
+
+- **Byte Latent Transformer (B.L.T.)**: Tokenizer-free architecture for universal data processing
+- **Self-Adapting Language Models (SEAL)**: Continuous learning and self-improvement
+- **Prolonged Reinforcement Learning (ProRL)**: Advanced reasoning capabilities
+- **Autonomous Data Engine**: Web-scale data acquisition and preprocessing
+- **Agentic Framework**: Beyond RAG with proactive, personalized behavior
+- **Constitutional AI**: Embedded ethical governance
+- **On-Device Optimization**: Compressed models for laptop deployment
+
+## Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      Jigyasa Architecture                   │
+├─────────────────────────────────────────────────────────────┤
+│  Governance Layer (Constitutional AI)                      │
+├─────────────────────────────────────────────────────────────┤
+│  Agentic Framework (Beyond RAG)                            │
+├─────────────────────────────────────────────────────────────┤
+│  Cognitive Core (SEAL + ProRL + Self-Correction)           │
+├─────────────────────────────────────────────────────────────┤
+│  Neuro-Symbolic Reasoning                                  │
+├─────────────────────────────────────────────────────────────┤
+│  Foundation: Byte Latent Transformer (B.L.T.)             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## Installation
+
+```bash
+git clone https://github.com/your-username/jigyasa.git
+cd jigyasa
+pip install -r requirements.txt
+```
+
+## Quick Start
+
+```python
+from jigyasa import Jigyasa
+
+# Initialize the model
+model = Jigyasa.from_pretrained("jigyasa-7b")
+
+# Self-adapting conversation
+response = model.generate("Explain quantum computing", adapt=True)
+print(response)
+```
+
+## Project Structure
+
+```
+jigyasa/
+├── core/                    # Core transformer and B.L.T. implementation
+├── cognitive/               # SEAL, ProRL, and self-correction modules
+├── data/                    # Autonomous data acquisition and preprocessing
+├── agentic/                 # Beyond RAG and agentic framework
+├── reasoning/               # Neuro-symbolic reasoning components
+├── governance/              # Constitutional AI and safety
+├── compression/             # Model optimization and compression
+├── evaluation/              # Benchmarking and evaluation suite
+├── deployment/              # MLOps and deployment pipelines
+├── tests/                   # Comprehensive test suite
+└── docs/                    # Documentation and examples
+```
+
+## License
+
+MIT License - see LICENSE file for details
+
+## Citation
+
+```bibtex
+@software{jigyasa2025,
+  title={Jigyasa: A Self-Improving, Agentic Language Model},
+  author={Jigyasa Development Team},
+  year={2025},
+  url={https://github.com/your-username/jigyasa}
+}
+```

@@ -1,0 +1,2 @@
+[console_scripts]
+jigyasa = jigyasa.cli:main
