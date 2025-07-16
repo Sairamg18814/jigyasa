@@ -313,7 +313,8 @@ def main():
         
         response = input("\nContinue? (y/n): ")
         if response.lower() == 'y':
-            os.system(f"{sys.executable} -m jigyasa.main --mode train")
+            # Use subprocess instead of os.system to handle spaces in paths
+            subprocess.run([sys.executable, "-m", "jigyasa.main", "--mode", "train"])
     
     elif args.mode == 'guide':
         # Show guide
