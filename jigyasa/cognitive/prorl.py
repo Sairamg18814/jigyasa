@@ -586,22 +586,48 @@ class ProRLTrainer:
         
         # Generate solution
         with torch.no_grad():
-            generated = self.model.generate(
-                input_ids=input_ids,
-                attention_mask=attention_mask,
-                max_new_tokens=200,
-                temperature=0.8,
-                do_sample=True,
-                top_p=0.9,
-                pad_token_id=getattr(self.model.tokenizer, 'pad_token_id', 0) if hasattr(self.model, 'tokenizer') else 0
-            )
+            # Check if this is a GPT2Wrapper (which takes input_text)
+            if hasattr(self.model, 'generate') and hasattr(self.model, 'tokenizer'):
+                if hasattr(self.model.tokenizer, 'decode'):
+                    # Decode the prompt back to text for GPT2Wrapper
+                    prompt_text = self.model.tokenizer.decode(input_ids[0], skip_special_tokens=True)
+                    generated_text = self.model.generate(
+                        input_text=prompt_text,
+                        max_new_tokens=200,
+                        temperature=0.8,
+                        do_sample=True,
+                        top_p=0.9
+                    )
+                    # Convert back to tensor format
+                    generated = self.model.tokenizer(generated_text, return_tensors="pt")['input_ids']
+                else:
+                    # Standard generation
+                    generated = self.model.generate(
+                        input_ids=input_ids,
+                        attention_mask=attention_mask,
+                        max_new_tokens=200,
+                        temperature=0.8,
+                        do_sample=True,
+                        top_p=0.9,
+                        pad_token_id=0
+                    )
+            else:
+                # Fallback
+                generated = input_ids  # Just return input
         
         # Extract solution - handle different tokenizer interfaces
-        if hasattr(self.model, 'tokenizer') and hasattr(self.model.tokenizer, 'decode'):
-            solution = self.model.tokenizer.decode(
-                generated[0][input_ids.size(1):], 
-                skip_special_tokens=True
-            ).strip()
+        if 'generated_text' in locals() and isinstance(generated_text, str):
+            # We already have the generated text
+            solution = generated_text.split("Solution:")[-1].strip()
+        elif hasattr(self.model, 'tokenizer') and hasattr(self.model.tokenizer, 'decode'):
+            # Handle tensor output
+            if generated.dim() == 2:
+                solution = self.model.tokenizer.decode(
+                    generated[0][input_ids.size(1):], 
+                    skip_special_tokens=True
+                ).strip()
+            else:
+                solution = self.model.tokenizer.decode(generated, skip_special_tokens=True).strip()
         elif hasattr(self.model, 'decode'):
             solution = self.model.decode(generated[0][input_ids.size(1):])
         else:
