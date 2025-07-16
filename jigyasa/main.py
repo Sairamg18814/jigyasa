@@ -21,8 +21,16 @@ try:
     from .cognitive.architecture import CognitiveArchitecture
 except ImportError:
     CognitiveArchitecture = None
-from .data.data_engine import DataEngine
-from .data.preprocessing import DataPreprocessor
+try:
+    from .data.data_engine import DataEngine
+except ImportError:
+    # Use STEM data engine if web scraping dependencies are missing
+    from .data.stem_data_engine import DataEngine
+try:
+    from .data.preprocessing import DataPreprocessor
+except ImportError:
+    # Use simple preprocessor for STEM data
+    from .data.simple_preprocessing import DataPreprocessor
 from .compression.distillation import distill_model
 from .compression.quantization import quantize_model_ptq
 
