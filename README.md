@@ -10,8 +10,6 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 
-<img src="assets/jigyasa-banner.png" alt="JIGYASA Banner" width="800"/>
-
 <p align="center">
   <strong>Real autonomous AI that improves code, learns continuously, and measures performance</strong>
 </p>
@@ -24,8 +22,6 @@
   <a href="#-benchmarks">Benchmarks</a> •
   <a href="#-contributing">Contributing</a>
 </p>
-
-<img src="assets/demo.gif" alt="JIGYASA Demo" width="600"/>
 
 </div>
 
@@ -77,10 +73,6 @@
 </table>
 
 ## 📈 Real Results
-
-<div align="center">
-<img src="assets/performance-chart.png" alt="Performance Improvements" width="700"/>
-</div>
 
 ```python
 # Before JIGYASA optimization
@@ -140,10 +132,6 @@ ollama pull llama3.1:8b
 ```
 
 ### First Run
-
-<div align="center">
-<img src="assets/terminal-demo.png" alt="Terminal Demo" width="600"/>
-</div>
 
 ```bash
 # Test all features
@@ -213,10 +201,6 @@ ollama run jigyasa "Optimize this function: def add(a,b): return a+b"
 ```
 
 ## 🏗️ Architecture
-
-<div align="center">
-<img src="assets/architecture-diagram.png" alt="Architecture" width="700"/>
-</div>
 
 ```
 jigyasa/
@@ -298,15 +282,9 @@ pytest --cov=jigyasa tests/
 
 We love contributions! See our [Contributing Guide](CONTRIBUTING.md) for details.
 
-<div align="center">
-
 ### Contributors
 
-<a href="https://github.com/Sairamg18814/jigyasa/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=Sairamg18814/jigyasa" />
-</a>
-
-</div>
+Contributions are welcome from everyone! See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ## 📈 Roadmap
 
@@ -325,33 +303,15 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-<table>
-<tr>
-<td align="center">
-<img src="https://ollama.com/public/ollama.png" width="100"/><br>
-<b>Ollama</b><br>
-Local LLM inference
-</td>
-<td align="center">
-<img src="https://github.com/meta-llama.png" width="100"/><br>
-<b>Meta AI</b><br>
-Llama 3.1 model
-</td>
-<td align="center">
-<img src="https://github.com/psf.png" width="100"/><br>
-<b>Python</b><br>
-Programming language
-</td>
-</tr>
-</table>
+- **Ollama** - Local LLM inference platform
+- **Meta AI** - Llama 3.1 model
+- **Python Community** - Amazing ecosystem and tools
 
 ---
 
 <div align="center">
 
-### 🌟 Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=Sairamg18814/jigyasa&type=Date)](https://star-history.com/#Sairamg18814/jigyasa&Date)
+### 🌟 Support the Project
 
 <p>
   <b>Built with ❤️ by the AI community</b><br>
