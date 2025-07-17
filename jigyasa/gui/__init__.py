@@ -1,8 +1,3 @@
 """
-JIGYASA GUI Module
-Real-time dashboard and control interface
+JIGYASA GUI - Real-time Dashboard with Beyond RAG
 """
-
-from .dashboard import JigyasaGUI, TrainingMonitor, main
-
-__all__ = ['JigyasaGUI', 'TrainingMonitor', 'main']

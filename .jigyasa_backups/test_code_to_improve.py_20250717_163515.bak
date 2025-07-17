@@ -1,0 +1,16 @@
+
+def find_duplicates(items):
+    """Find duplicate items in a list - intentionally inefficient"""
+    duplicates = []
+    for i in range(len(items)):
+        for j in range(i + 1, len(items)):
+            if items[i] == items[j] and items[i] not in duplicates:
+                duplicates.append(items[i])
+    return duplicates
+
+def concatenate_strings(strings):
+    """Concatenate strings - intentionally inefficient"""
+    result = ""
+    for s in strings:
+        result = result + str(s)
+    return result

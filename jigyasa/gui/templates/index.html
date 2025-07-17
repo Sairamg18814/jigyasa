@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JIGYASA AGI - Real-Time Dashboard</title>
+    
+    <!-- CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-streaming@2.0.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/luxon@3.0.0/build/global/luxon.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.2.0"></script>
+    
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
+    
+    <!-- Prism for code highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    
+    <style>
+        :root {
+            --primary-color: #4F46E5;
+            --secondary-color: #7C3AED;
+            --success-color: #10B981;
+            --danger-color: #EF4444;
+            --dark-bg: #111827;
+            --card-bg: #1F2937;
+            --text-primary: #F9FAFB;
+            --text-secondary: #9CA3AF;
+        }
+        
+        body {
+            background-color: var(--dark-bg);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .navbar {
+            background-color: var(--card-bg);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .metric-card {
+            text-align: center;
+            padding: 20px;
+            transition: transform 0.2s;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 20px 0;
+        }
+        
+        .code-editor {
+            background-color: #1e1e1e;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Fira Code', monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        
+        .status-online {
+            background-color: var(--success-color);
+            box-shadow: 0 0 5px var(--success-color);
+        }
+        
+        .status-offline {
+            background-color: var(--danger-color);
+            box-shadow: 0 0 5px var(--danger-color);
+        }
+        
+        .beyond-rag-result {
+            background-color: rgba(79, 70, 229, 0.1);
+            border-left: 3px solid var(--primary-color);
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        
+        .self-edit-diff {
+            background-color: rgba(16, 185, 129, 0.1);
+            padding: 10px;
+            border-radius: 4px;
+            margin: 5px 0;
+        }
+        
+        .diff-added {
+            color: #10B981;
+        }
+        
+        .diff-removed {
+            color: #EF4444;
+        }
+        
+        .floating-action-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .floating-action-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .loading-spinner {
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top: 3px solid var(--primary-color);
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-brain"></i> JIGYASA AGI
+            </a>
+            <div class="ms-auto d-flex align-items-center">
+                <span class="status-indicator status-online" id="connectionStatus"></span>
+                <span class="text-secondary me-3">Connected</span>
+                <button class="btn btn-outline-light btn-sm" id="syncButton">
+                    <i class="fab fa-github"></i> Sync to GitHub
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container-fluid mt-4">
+        <!-- Metrics Row -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card metric-card">
+                    <h6 class="text-secondary">Learning Rate</h6>
+                    <div class="metric-value" id="learningRate">0.0</div>
+                    <small class="text-success"><i class="fas fa-arrow-up"></i> +12.5%</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card metric-card">
+                    <h6 class="text-secondary">Code Improvements</h6>
+                    <div class="metric-value" id="codeImprovements">0</div>
+                    <small class="text-success"><i class="fas fa-arrow-up"></i> +3 today</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card metric-card">
+                    <h6 class="text-secondary">Performance Gain</h6>
+                    <div class="metric-value" id="performanceGain">0%</div>
+                    <small class="text-success"><i class="fas fa-arrow-up"></i> Avg 45%</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card metric-card">
+                    <h6 class="text-secondary">Knowledge Base</h6>
+                    <div class="metric-value" id="knowledgeBase">0</div>
+                    <small class="text-success"><i class="fas fa-arrow-up"></i> +127 patterns</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-chart-line"></i> Learning Curve
+                        </h5>
+                        <div class="chart-container">
+                            <canvas id="learningChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-tachometer-alt"></i> Performance Metrics
+                        </h5>
+                        <div class="chart-container">
+                            <canvas id="performanceChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Code Editor and Self-Editing Row -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-code"></i> Code Optimizer
+                        </h5>
+                        <textarea class="form-control code-editor" id="codeInput" rows="10" placeholder="Paste your Python code here..."></textarea>
+                        <button class="btn btn-primary mt-3" id="optimizeButton">
+                            <i class="fas fa-magic"></i> Optimize Code
+                        </button>
+                        <div id="optimizedCode" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-robot"></i> Self-Editing Activity
+                            <span class="badge bg-success ms-2 pulse">LIVE</span>
+                        </h5>
+                        <div id="selfEditingLog" class="code-editor" style="height: 350px; overflow-y: auto;">
+                            <div class="text-secondary">Waiting for self-editing activity...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Beyond RAG Search -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-search"></i> Beyond RAG - Real-Time Knowledge
+                        </h5>
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control" id="ragSearchInput" placeholder="Search for latest information...">
+                            <button class="btn btn-primary" id="ragSearchButton">
+                                <i class="fas fa-search"></i> Search
+                            </button>
+                        </div>
+                        <div id="ragResults" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Interface -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-comments"></i> Chat with JIGYASA
+                        </h5>
+                        <div id="chatMessages" class="code-editor mb-3" style="height: 300px; overflow-y: auto;">
+                            <div class="text-secondary">Start a conversation with JIGYASA...</div>
+                        </div>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="chatInput" placeholder="Ask JIGYASA anything...">
+                            <button class="btn btn-primary" id="sendButton">
+                                <i class="fas fa-paper-plane"></i> Send
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Action Button -->
+    <button class="floating-action-btn" id="selfEditButton" title="Trigger Self-Edit">
+        <i class="fas fa-wand-magic-sparkles"></i>
+    </button>
+
+    <!-- Scripts -->
+    <script>
+        // Initialize Socket.IO
+        const socket = io();
+        
+        // Chart configurations
+        const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    type: 'realtime',
+                    realtime: {
+                        duration: 20000,
+                        refresh: 1000,
+                        delay: 1000,
+                        onRefresh: chart => {}
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                },
+                y: {
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#F9FAFB'
+                    }
+                }
+            }
+        };
+        
+        // Initialize Learning Chart
+        const learningCtx = document.getElementById('learningChart').getContext('2d');
+        const learningChart = new Chart(learningCtx, {
+            type: 'line',
+            data: {
+                datasets: [{
+                    label: 'Knowledge Count',
+                    borderColor: '#4F46E5',
+                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                    data: [],
+                    tension: 0.4
+                }, {
+                    label: 'Learning Rate',
+                    borderColor: '#10B981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    data: [],
+                    tension: 0.4
+                }]
+            },
+            options: chartOptions
+        });
+        
+        // Initialize Performance Chart
+        const performanceCtx = document.getElementById('performanceChart').getContext('2d');
+        const performanceChart = new Chart(performanceCtx, {
+            type: 'line',
+            data: {
+                datasets: [{
+                    label: 'CPU Usage %',
+                    borderColor: '#EF4444',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    data: [],
+                    tension: 0.4
+                }, {
+                    label: 'Memory Usage %',
+                    borderColor: '#F59E0B',
+                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                    data: [],
+                    tension: 0.4
+                }, {
+                    label: 'Response Time (ms)',
+                    borderColor: '#8B5CF6',
+                    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                    data: [],
+                    tension: 0.4,
+                    yAxisID: 'y1'
+                }]
+            },
+            options: {
+                ...chartOptions,
+                scales: {
+                    ...chartOptions.scales,
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        grid: {
+                            drawOnChartArea: false,
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Socket event handlers
+        socket.on('connect', () => {
+            console.log('Connected to JIGYASA');
+            socket.emit('start_monitoring');
+        });
+        
+        socket.on('learning_update', (data) => {
+            // Update metrics
+            document.getElementById('learningRate').textContent = data.learning_rate.toFixed(2);
+            document.getElementById('knowledgeBase').textContent = data.knowledge_count;
+            
+            // Update chart
+            learningChart.data.datasets[0].data.push({
+                x: Date.now(),
+                y: data.knowledge_count
+            });
+            learningChart.data.datasets[1].data.push({
+                x: Date.now(),
+                y: data.learning_rate * 100
+            });
+            learningChart.update('quiet');
+        });
+        
+        socket.on('editing_update', (data) => {
+            // Update metrics
+            const improvementsEl = document.getElementById('codeImprovements');
+            improvementsEl.textContent = parseInt(improvementsEl.textContent) + 1;
+            
+            document.getElementById('performanceGain').textContent = 
+                (data.performance_gain * 100).toFixed(1) + '%';
+            
+            // Add to self-editing log
+            const log = document.getElementById('selfEditingLog');
+            const entry = document.createElement('div');
+            entry.className = 'self-edit-diff mb-3';
+            entry.innerHTML = `
+                <div class="text-success mb-2">
+                    <i class="fas fa-check-circle"></i> ${data.file}
+                </div>
+                <div class="text-secondary">
+                    ${data.improvements.map(imp => `
+                        <div class="mb-1">
+                            <span class="diff-added">+ ${imp.description}</span>
+                            <span class="badge bg-success ms-2">${(imp.performance_gain * 100).toFixed(1)}%</span>
+                        </div>
+                    `).join('')}
+                </div>
+                <small class="text-muted">${new Date(data.timestamp).toLocaleTimeString()}</small>
+            `;
+            log.insertBefore(entry, log.firstChild);
+        });
+        
+        socket.on('performance_update', (data) => {
+            // Update performance chart
+            performanceChart.data.datasets[0].data.push({
+                x: Date.now(),
+                y: data.cpu_usage
+            });
+            performanceChart.data.datasets[1].data.push({
+                x: Date.now(),
+                y: data.memory_usage
+            });
+            performanceChart.data.datasets[2].data.push({
+                x: Date.now(),
+                y: data.response_time
+            });
+            performanceChart.update('quiet');
+        });
+        
+        // Button handlers
+        document.getElementById('optimizeButton').addEventListener('click', async () => {
+            const code = document.getElementById('codeInput').value;
+            if (!code) return;
+            
+            const button = document.getElementById('optimizeButton');
+            button.disabled = true;
+            button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Optimizing...';
+            
+            try {
+                const response = await fetch('/api/optimize', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code })
+                });
+                
+                const result = await response.json();
+                
+                const outputDiv = document.getElementById('optimizedCode');
+                if (result.improved_code) {
+                    outputDiv.innerHTML = `
+                        <h6 class="text-success">Optimized Code:</h6>
+                        <pre><code class="language-python">${result.improved_code}</code></pre>
+                        <div class="mt-2">
+                            <span class="badge bg-success">Performance Gain: ${(result.performance_gain * 100).toFixed(1)}%</span>
+                        </div>
+                    `;
+                    Prism.highlightAll();
+                } else {
+                    outputDiv.innerHTML = '<div class="text-warning">No optimizations found</div>';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            } finally {
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-magic"></i> Optimize Code';
+            }
+        });
+        
+        document.getElementById('ragSearchButton').addEventListener('click', async () => {
+            const query = document.getElementById('ragSearchInput').value;
+            if (!query) return;
+            
+            const button = document.getElementById('ragSearchButton');
+            button.disabled = true;
+            button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Searching...';
+            
+            try {
+                const response = await fetch('/api/beyond-rag/search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query })
+                });
+                
+                const results = await response.json();
+                
+                const resultsDiv = document.getElementById('ragResults');
+                resultsDiv.innerHTML = `
+                    <div class="beyond-rag-result">
+                        <h6>${query}</h6>
+                        <p>${results.summary || 'No summary available'}</p>
+                        ${results.key_points ? `
+                            <ul>
+                                ${results.key_points.map(point => `<li>${point}</li>`).join('')}
+                            </ul>
+                        ` : ''}
+                        <small class="text-muted">
+                            Sources: ${Object.keys(results.sources || {}).join(', ')}
+                        </small>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error:', error);
+            } finally {
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-search"></i> Search';
+            }
+        });
+        
+        document.getElementById('sendButton').addEventListener('click', async () => {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            if (!message) return;
+            
+            const messagesDiv = document.getElementById('chatMessages');
+            
+            // Add user message
+            messagesDiv.innerHTML += `
+                <div class="mb-2">
+                    <strong class="text-primary">You:</strong> ${message}
+                </div>
+            `;
+            
+            input.value = '';
+            
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: message })
+                });
+                
+                const result = await response.json();
+                
+                // Add JIGYASA response
+                messagesDiv.innerHTML += `
+                    <div class="mb-2">
+                        <strong class="text-success">JIGYASA:</strong> ${result.response}
+                    </div>
+                `;
+                
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+        
+        document.getElementById('syncButton').addEventListener('click', async () => {
+            const button = document.getElementById('syncButton');
+            button.disabled = true;
+            button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Syncing...';
+            
+            try {
+                const response = await fetch('/api/github/sync', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: 'Manual sync from GUI' })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    button.classList.add('btn-success');
+                    button.innerHTML = '<i class="fas fa-check"></i> Synced!';
+                    setTimeout(() => {
+                        button.classList.remove('btn-success');
+                        button.innerHTML = '<i class="fab fa-github"></i> Sync to GitHub';
+                    }, 3000);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            } finally {
+                button.disabled = false;
+            }
+        });
+        
+        document.getElementById('selfEditButton').addEventListener('click', () => {
+            // Trigger self-edit on current file
+            if (confirm('Trigger self-editing on JIGYASA core files?')) {
+                fetch('/api/self-edit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ file_path: 'jigyasa/core/jigyasa_agi.py' })
+                });
+            }
+        });
+        
+        // Enter key handlers
+        document.getElementById('chatInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('sendButton').click();
+            }
+        });
+        
+        document.getElementById('ragSearchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('ragSearchButton').click();
+            }
+        });
+    </script>
+</body>
+</html>

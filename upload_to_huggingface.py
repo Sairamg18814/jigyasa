@@ -18,6 +18,19 @@ def upload_to_huggingface():
     
     # Create repository
     repo_id = "Sairamg18814/jigyasa-agi"
+    
+    # First try to get the user info
+    try:
+        from huggingface_hub import whoami
+        user_info = whoami(token=token)
+        username = user_info.get("name", "Sairamg18814")
+        print(f"📝 Logged in as: {username}")
+        # Update repo_id if different username
+        if username != "Sairamg18814":
+            repo_id = f"{username}/jigyasa-agi"
+            print(f"📝 Using repository: {repo_id}")
+    except Exception as e:
+        print(f"⚠️  Could not verify user: {e}")
     try:
         create_repo(repo_id, token=token, repo_type="model", exist_ok=True)
         print(f"✅ Repository created/exists: {repo_id}")
