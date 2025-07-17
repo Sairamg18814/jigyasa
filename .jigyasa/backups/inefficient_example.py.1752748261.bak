@@ -1,0 +1,29 @@
+
+def calculate_sum_of_squares(numbers):
+    """Calculate sum of squares inefficiently"""
+    result = 0
+    for i in range(len(numbers)):
+        result = result + numbers[i] * numbers[i]
+    return result
+
+def find_common_elements(list1, list2):
+    """Find common elements inefficiently"""
+    common = []
+    for i in range(len(list1)):
+        for j in range(len(list2)):
+            if list1[i] == list2[j]:
+                if list1[i] not in common:
+                    common.append(list1[i])
+    return common
+
+def count_words(text):
+    """Count word occurrences inefficiently"""
+    words = text.split()
+    word_count = {}
+    for i in range(len(words)):
+        word = words[i].lower()
+        if word in word_count:
+            word_count[word] = word_count[word] + 1
+        else:
+            word_count[word] = 1
+    return word_count
